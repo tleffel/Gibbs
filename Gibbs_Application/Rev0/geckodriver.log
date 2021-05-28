@@ -1,0 +1,23 @@
+1622224713455	geckodriver	INFO	Listening on 127.0.0.1:50481
+1622224714452	mozrunner::runner	INFO	Running command: "/usr/bin/firefox" "--marionette" "-foreground" "-no-remote" "-profile" "/tmp/rust_mozprofilekI0pBJ"
+1622224714771	Marionette	INFO	Marionette enabled
+console.warn: SearchSettings: "get: No settings file exists, new profile?" (new Error("", "(unknown module)"))
+1622224716038	Marionette	INFO	Listening on port 42935
+1622224716101	Marionette	WARN	TLS certificate errors will be ignored for this session
+1622224719573	Marionette	INFO	Stopped listening on port 42935
+1622224853508	geckodriver	INFO	Listening on 127.0.0.1:41349
+1622224853510	mozrunner::runner	INFO	Running command: "/usr/bin/firefox" "--marionette" "-foreground" "-no-remote" "-profile" "/tmp/rust_mozprofilepCBEb0"
+1622224853827	Marionette	INFO	Marionette enabled
+console.warn: SearchSettings: "get: No settings file exists, new profile?" (new Error("", "(unknown module)"))
+1622224855302	Marionette	INFO	Listening on port 44159
+1622224855341	Marionette	WARN	TLS certificate errors will be ignored for this session
+console.warn: LoginRecipes: "getRecipes: falling back to a synchronous message for:" "https://webbook.nist.gov"
+console.error: (new TypeError("currentNode is null", "resource://devtools/client/inspector/shared/style-change-tracker.js", 66))
+TypeError: currentNode is null: canMutationImpactCurrentStyles@resource://devtools/client/inspector/shared/style-change-tracker.js:66:20
+onMutations@resource://devtools/client/inspector/shared/style-change-tracker.js:84:41
+_emit@resource://devtools/shared/event-emitter.js:226:34
+emit@resource://devtools/shared/event-emitter.js:172:18
+emit@resource://devtools/shared/event-emitter.js:324:18
+getMutations@resource://devtools/client/fronts/walker.js:358:10
+
+1622225336645	Marionette	INFO	Stopped listening on port 44159
