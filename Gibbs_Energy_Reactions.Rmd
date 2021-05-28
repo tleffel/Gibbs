@@ -1,0 +1,756 @@
+---
+title: "Gibbs Free Energy for Silica Glass Fiber Draws"
+output: html_notebook
+---
+
+## Gibbs Free Energy Equation
+### &nbsp;&nbsp;&nbsp;&nbsp; dG = dH(kJ/mol) - T*S(J/mol)*E-3
+### &nbsp;&nbsp;&nbsp;&nbsp; dG = G(products) - G(reactants)
+### &nbsp;&nbsp;&nbsp;&nbsp; if dG > 0, reaction will propagate backward
+### &nbsp;&nbsp;&nbsp;&nbsp; if dG < 0, reaction will propogate forward
+
+## Schomate Equation
+### &nbsp;&nbsp;&nbsp;&nbsp; dH(kJ/mol) = A*t + (B*t^2)/2 + (C*t^3)/3 + (D*t^4)/4 - E/t + F - H
+### &nbsp;&nbsp;&nbsp;&nbsp; S(J/mol) = A*ln(t) + B*t + (C*t^2)/2 + (D*t^3)/3 - E/(2*t^2) + G
+#### &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; t = T/1000
+
+### Upload libraries
+```{r}
+library(ggplot2)
+library(readxl)
+```
+
+### Upload dataset and grab relevant data
+```{r}
+dataset <- read_excel('ThermodynamicPropertiesData.xlsx')
+
+dataGibbs <- dataset[-c(24:29, 40:52), ]
+```
+
+### Create temperature array
+```{r}
+lowTemp <- 293
+maxTemp <- 2600
+T <- c(lowTemp:maxTemp)
+t <- T/1000
+```
+
+### Create enthalpy arrays for respective coefficients and temperature ranges
+#### dH(kJ/mol) = A*t + (B*t^2)/2 + (C*t^3)/3 + (D*t^4)/4 - E/t + F - H + H293
+```{r}
+H_O2 <- c(dataGibbs$A[1]*t[match(c(lowTemp:dataGibbs$Max_Temp[1]), T)] +
+          (dataGibbs$B[1]*t[match(c(lowTemp:dataGibbs$Max_Temp[1]), T)]^2)/2 +
+          (dataGibbs$C[1]*t[match(c(lowTemp:dataGibbs$Max_Temp[1]), T)]^3)/3 +
+          (dataGibbs$D[1]*t[match(c(lowTemp:dataGibbs$Max_Temp[1]), T)]^4)/4 -
+          dataGibbs$E[1]/t[match(c(lowTemp:dataGibbs$Max_Temp[1]), T)] + 
+          dataGibbs$F[1] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[1] - dataGibbs$H[1], 
+        dataGibbs$A[2]*t[match(c((dataGibbs$Max_Temp[1]+1):dataGibbs$Max_Temp[2]),T)] +
+          (dataGibbs$B[2]*t[match(c((dataGibbs$Max_Temp[1]+1):dataGibbs$Max_Temp[2]),T)]^2)/2 +
+          (dataGibbs$C[2]*t[match(c((dataGibbs$Max_Temp[1]+1):dataGibbs$Max_Temp[2]),T)]^3)/3 +
+          (dataGibbs$D[2]*t[match(c((dataGibbs$Max_Temp[1]+1):dataGibbs$Max_Temp[2]),T)]^4)/4 -
+          dataGibbs$E[2]/t[match(c((dataGibbs$Max_Temp[1]+1):dataGibbs$Max_Temp[2]),T)] + 
+          dataGibbs$F[2] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[2] - dataGibbs$H[2],
+        dataGibbs$A[3]*t[match(c((dataGibbs$Max_Temp[2]+1):maxTemp), T)] +
+          (dataGibbs$B[3]*t[match(c((dataGibbs$Max_Temp[2]+1):maxTemp), T)]^2)/2 +
+          (dataGibbs$C[3]*t[match(c((dataGibbs$Max_Temp[2]+1):maxTemp), T)]^3)/3 +
+          (dataGibbs$D[3]*t[match(c((dataGibbs$Max_Temp[2]+1):maxTemp), T)]^4)/4 -
+          dataGibbs$E[3]/t[match(c((dataGibbs$Max_Temp[2]+1):maxTemp), T)] + 
+          dataGibbs$F[3] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[3] - dataGibbs$H[3])
+
+H_Si <- c(dataGibbs$A[4]*t[match(c(lowTemp:dataGibbs$Max_Temp[4]), T)] +
+          (dataGibbs$B[4]*t[match(c(lowTemp:dataGibbs$Max_Temp[4]), T)]^2)/2 +
+          (dataGibbs$C[4]*t[match(c(lowTemp:dataGibbs$Max_Temp[4]), T)]^3)/3 +
+          (dataGibbs$D[4]*t[match(c(lowTemp:dataGibbs$Max_Temp[4]), T)]^4)/4 -
+          dataGibbs$E[4]/t[match(c(lowTemp:dataGibbs$Max_Temp[4]), T)] + 
+          dataGibbs$F[4] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[4] - dataGibbs$H[4], 
+        dataGibbs$A[5]*t[match(c((dataGibbs$Max_Temp[4]+1):maxTemp),T)] +
+          (dataGibbs$B[5]*t[match(c((dataGibbs$Max_Temp[4]+1):maxTemp),T)]^2)/2 +
+          (dataGibbs$C[5]*t[match(c((dataGibbs$Max_Temp[4]+1):maxTemp),T)]^3)/3 +
+          (dataGibbs$D[5]*t[match(c((dataGibbs$Max_Temp[4]+1):maxTemp),T)]^4)/4 -
+          dataGibbs$E[5]/t[match(c((dataGibbs$Max_Temp[4]+1):maxTemp),T)] + 
+          dataGibbs$F[5] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[5] - dataGibbs$H[5])
+
+H_SiO2 <- c(dataGibbs$A[6]*t[match(c(lowTemp:dataGibbs$Max_Temp[6]), T)] +
+          (dataGibbs$B[6]*t[match(c(lowTemp:dataGibbs$Max_Temp[6]), T)]^2)/2 +
+          (dataGibbs$C[6]*t[match(c(lowTemp:dataGibbs$Max_Temp[6]), T)]^3)/3 +
+          (dataGibbs$D[6]*t[match(c(lowTemp:dataGibbs$Max_Temp[6]), T)]^4)/4 -
+          dataGibbs$E[6]/t[match(c(lowTemp:dataGibbs$Max_Temp[6]), T)] + 
+          dataGibbs$F[6] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[6] - dataGibbs$H[6], 
+        dataGibbs$A[7]*t[match(c((dataGibbs$Max_Temp[6]+1):dataGibbs$Max_Temp[7]),T)] +
+          (dataGibbs$B[7]*t[match(c((dataGibbs$Max_Temp[6]+1):dataGibbs$Max_Temp[7]),T)]^2)/2 +
+          (dataGibbs$C[7]*t[match(c((dataGibbs$Max_Temp[6]+1):dataGibbs$Max_Temp[7]),T)]^3)/3 +
+          (dataGibbs$D[7]*t[match(c((dataGibbs$Max_Temp[6]+1):dataGibbs$Max_Temp[7]),T)]^4)/4 -
+          dataGibbs$E[7]/t[match(c((dataGibbs$Max_Temp[6]+1):dataGibbs$Max_Temp[7]),T)] + 
+          dataGibbs$F[7] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[7] - dataGibbs$H[7],
+        dataGibbs$A[8]*t[match(c((dataGibbs$Max_Temp[7]+1):maxTemp), T)] +
+          (dataGibbs$B[8]*t[match(c((dataGibbs$Max_Temp[7]+1):maxTemp), T)]^2)/2 +
+          (dataGibbs$C[8]*t[match(c((dataGibbs$Max_Temp[7]+1):maxTemp), T)]^3)/3 +
+          (dataGibbs$D[8]*t[match(c((dataGibbs$Max_Temp[7]+1):maxTemp), T)]^4)/4 -
+          dataGibbs$E[8]/t[match(c((dataGibbs$Max_Temp[7]+1):maxTemp), T)] + 
+          dataGibbs$F[8] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[8] - dataGibbs$H[8])
+
+H_Al <- c(dataGibbs$A[9]*t[match(c(lowTemp:dataGibbs$Max_Temp[9]), T)] +
+          (dataGibbs$B[9]*t[match(c(lowTemp:dataGibbs$Max_Temp[9]), T)]^2)/2 +
+          (dataGibbs$C[9]*t[match(c(lowTemp:dataGibbs$Max_Temp[9]), T)]^3)/3 +
+          (dataGibbs$D[9]*t[match(c(lowTemp:dataGibbs$Max_Temp[9]), T)]^4)/4 -
+          dataGibbs$E[9]/t[match(c(lowTemp:dataGibbs$Max_Temp[9]), T)] + 
+          dataGibbs$F[9] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[9] - dataGibbs$H[9], 
+        dataGibbs$A[10]*t[match(c((dataGibbs$Max_Temp[9]+1):maxTemp),T)] +
+          (dataGibbs$B[10]*t[match(c((dataGibbs$Max_Temp[9]+1):maxTemp),T)]^2)/2 +
+          (dataGibbs$C[10]*t[match(c((dataGibbs$Max_Temp[9]+1):maxTemp),T)]^3)/3 +
+          (dataGibbs$D[10]*t[match(c((dataGibbs$Max_Temp[9]+1):maxTemp),T)]^4)/4 -
+          dataGibbs$E[10]/t[match(c((dataGibbs$Max_Temp[9]+1):maxTemp),T)] + 
+          dataGibbs$F[10] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[10] - dataGibbs$H[10])
+
+H_Al2O3_alpha <- c(dataGibbs$A[11]*t[match(c(lowTemp:dataGibbs$Max_Temp[11]), T)] +
+          (dataGibbs$B[11]*t[match(c(lowTemp:dataGibbs$Max_Temp[11]), T)]^2)/2 +
+          (dataGibbs$C[11]*t[match(c(lowTemp:dataGibbs$Max_Temp[11]), T)]^3)/3 +
+          (dataGibbs$D[11]*t[match(c(lowTemp:dataGibbs$Max_Temp[11]), T)]^4)/4 -
+          dataGibbs$E[11]/t[match(c(lowTemp:dataGibbs$Max_Temp[11]), T)] + 
+          dataGibbs$F[11] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[11] - dataGibbs$H[11], 
+        dataGibbs$A[15]*t[match(c((dataGibbs$Max_Temp[11]+1):maxTemp),T)] +
+          (dataGibbs$B[15]*t[match(c((dataGibbs$Max_Temp[11]+1):maxTemp),T)]^2)/2 +
+          (dataGibbs$C[15]*t[match(c((dataGibbs$Max_Temp[11]+1):maxTemp),T)]^3)/3 +
+          (dataGibbs$D[15]*t[match(c((dataGibbs$Max_Temp[11]+1):maxTemp),T)]^4)/4 -
+          dataGibbs$E[15]/t[match(c((dataGibbs$Max_Temp[11]+1):maxTemp),T)] + 
+          dataGibbs$F[15] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[15] - dataGibbs$H[15])
+
+H_Al2O3_gamma <- c(dataGibbs$A[12]*t[match(c(lowTemp:dataGibbs$Max_Temp[12]), T)] +
+          (dataGibbs$B[12]*t[match(c(lowTemp:dataGibbs$Max_Temp[12]), T)]^2)/2 +
+          (dataGibbs$C[12]*t[match(c(lowTemp:dataGibbs$Max_Temp[12]), T)]^3)/3 +
+          (dataGibbs$D[12]*t[match(c(lowTemp:dataGibbs$Max_Temp[12]), T)]^4)/4 -
+          dataGibbs$E[12]/t[match(c(lowTemp:dataGibbs$Max_Temp[12]), T)] + 
+          dataGibbs$F[12] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[12] - dataGibbs$H[12], 
+        dataGibbs$A[15]*t[match(c((dataGibbs$Max_Temp[12]+1):maxTemp),T)] +
+          (dataGibbs$B[15]*t[match(c((dataGibbs$Max_Temp[12]+1):maxTemp),T)]^2)/2 +
+          (dataGibbs$C[15]*t[match(c((dataGibbs$Max_Temp[12]+1):maxTemp),T)]^3)/3 +
+          (dataGibbs$D[15]*t[match(c((dataGibbs$Max_Temp[12]+1):maxTemp),T)]^4)/4 -
+          dataGibbs$E[15]/t[match(c((dataGibbs$Max_Temp[12]+1):maxTemp),T)] + 
+          dataGibbs$F[15] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[15] - dataGibbs$H[15])
+
+H_Al2O3_delta <- c(dataGibbs$A[13]*t[match(c(lowTemp:dataGibbs$Max_Temp[13]), T)] +
+          (dataGibbs$B[13]*t[match(c(lowTemp:dataGibbs$Max_Temp[13]), T)]^2)/2 +
+          (dataGibbs$C[13]*t[match(c(lowTemp:dataGibbs$Max_Temp[13]), T)]^3)/3 +
+          (dataGibbs$D[13]*t[match(c(lowTemp:dataGibbs$Max_Temp[13]), T)]^4)/4 -
+          dataGibbs$E[13]/t[match(c(lowTemp:dataGibbs$Max_Temp[13]), T)] + 
+          dataGibbs$F[13] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[13] - dataGibbs$H[13], 
+        dataGibbs$A[15]*t[match(c((dataGibbs$Max_Temp[13]+1):maxTemp),T)] +
+          (dataGibbs$B[15]*t[match(c((dataGibbs$Max_Temp[13]+1):maxTemp),T)]^2)/2 +
+          (dataGibbs$C[15]*t[match(c((dataGibbs$Max_Temp[13]+1):maxTemp),T)]^3)/3 +
+          (dataGibbs$D[15]*t[match(c((dataGibbs$Max_Temp[13]+1):maxTemp),T)]^4)/4 -
+          dataGibbs$E[15]/t[match(c((dataGibbs$Max_Temp[13]+1):maxTemp),T)] + 
+          dataGibbs$F[15] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[15] - dataGibbs$H[15])
+
+H_Al2O3_kappa <- c(dataGibbs$A[14]*t[match(c(lowTemp:dataGibbs$Max_Temp[14]), T)] +
+          (dataGibbs$B[14]*t[match(c(lowTemp:dataGibbs$Max_Temp[14]), T)]^2)/2 +
+          (dataGibbs$C[14]*t[match(c(lowTemp:dataGibbs$Max_Temp[14]), T)]^3)/3 +
+          (dataGibbs$D[14]*t[match(c(lowTemp:dataGibbs$Max_Temp[14]), T)]^4)/4 -
+          dataGibbs$E[14]/t[match(c(lowTemp:dataGibbs$Max_Temp[14]), T)] + 
+          dataGibbs$F[14] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[14] - dataGibbs$H[14], 
+        dataGibbs$A[15]*t[match(c((dataGibbs$Max_Temp[14]+1):maxTemp),T)] +
+          (dataGibbs$B[15]*t[match(c((dataGibbs$Max_Temp[14]+1):maxTemp),T)]^2)/2 +
+          (dataGibbs$C[15]*t[match(c((dataGibbs$Max_Temp[14]+1):maxTemp),T)]^3)/3 +
+          (dataGibbs$D[15]*t[match(c((dataGibbs$Max_Temp[14]+1):maxTemp),T)]^4)/4 -
+          dataGibbs$E[15]/t[match(c((dataGibbs$Max_Temp[14]+1):maxTemp),T)] + 
+          dataGibbs$F[15] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[15] - dataGibbs$H[15])
+
+H_V <- c(dataGibbs$A[16]*t[match(c(lowTemp:dataGibbs$Max_Temp[16]), T)] +
+          (dataGibbs$B[16]*t[match(c(lowTemp:dataGibbs$Max_Temp[16]), T)]^2)/2 +
+          (dataGibbs$C[16]*t[match(c(lowTemp:dataGibbs$Max_Temp[16]), T)]^3)/3 +
+          (dataGibbs$D[16]*t[match(c(lowTemp:dataGibbs$Max_Temp[16]), T)]^4)/4 -
+          dataGibbs$E[16]/t[match(c(lowTemp:dataGibbs$Max_Temp[16]), T)] + 
+          dataGibbs$F[16] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[16] - dataGibbs$H[16], 
+        dataGibbs$A[17]*t[match(c((dataGibbs$Max_Temp[16]+1):maxTemp),T)] +
+          (dataGibbs$B[17]*t[match(c((dataGibbs$Max_Temp[16]+1):maxTemp),T)]^2)/2 +
+          (dataGibbs$C[17]*t[match(c((dataGibbs$Max_Temp[16]+1):maxTemp),T)]^3)/3 +
+          (dataGibbs$D[17]*t[match(c((dataGibbs$Max_Temp[16]+1):maxTemp),T)]^4)/4 -
+          dataGibbs$E[17]/t[match(c((dataGibbs$Max_Temp[16]+1):maxTemp),T)] + 
+          dataGibbs$F[17] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[17] - dataGibbs$H[17])
+
+H_VO <- c(dataGibbs$A[18]*t[match(c(lowTemp:dataGibbs$Max_Temp[18]), T)] +
+          (dataGibbs$B[18]*t[match(c(lowTemp:dataGibbs$Max_Temp[18]), T)]^2)/2 +
+          (dataGibbs$C[18]*t[match(c(lowTemp:dataGibbs$Max_Temp[18]), T)]^3)/3 +
+          (dataGibbs$D[18]*t[match(c(lowTemp:dataGibbs$Max_Temp[18]), T)]^4)/4 -
+          dataGibbs$E[18]/t[match(c(lowTemp:dataGibbs$Max_Temp[18]), T)] + 
+          dataGibbs$F[18] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[18] - dataGibbs$H[18], 
+        dataGibbs$A[19]*t[match(c((dataGibbs$Max_Temp[18]+1):maxTemp),T)] +
+          (dataGibbs$B[19]*t[match(c((dataGibbs$Max_Temp[18]+1):maxTemp),T)]^2)/2 +
+          (dataGibbs$C[19]*t[match(c((dataGibbs$Max_Temp[18]+1):maxTemp),T)]^3)/3 +
+          (dataGibbs$D[19]*t[match(c((dataGibbs$Max_Temp[18]+1):maxTemp),T)]^4)/4 -
+          dataGibbs$E[19]/t[match(c((dataGibbs$Max_Temp[18]+1):maxTemp),T)] + 
+          dataGibbs$F[19] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[19] - dataGibbs$H[19])
+
+H_V2O3 <- c(dataGibbs$A[20]*t[match(c(lowTemp:dataGibbs$Max_Temp[20]), T)] +
+          (dataGibbs$B[20]*t[match(c(lowTemp:dataGibbs$Max_Temp[20]), T)]^2)/2 +
+          (dataGibbs$C[20]*t[match(c(lowTemp:dataGibbs$Max_Temp[20]), T)]^3)/3 +
+          (dataGibbs$D[20]*t[match(c(lowTemp:dataGibbs$Max_Temp[20]), T)]^4)/4 -
+          dataGibbs$E[20]/t[match(c(lowTemp:dataGibbs$Max_Temp[20]), T)] + 
+          dataGibbs$F[20] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[20] - dataGibbs$H[20], 
+        dataGibbs$A[21]*t[match(c((dataGibbs$Max_Temp[20]+1):maxTemp),T)] +
+          (dataGibbs$B[21]*t[match(c((dataGibbs$Max_Temp[20]+1):maxTemp),T)]^2)/2 +
+          (dataGibbs$C[21]*t[match(c((dataGibbs$Max_Temp[20]+1):maxTemp),T)]^3)/3 +
+          (dataGibbs$D[21]*t[match(c((dataGibbs$Max_Temp[20]+1):maxTemp),T)]^4)/4 -
+          dataGibbs$E[21]/t[match(c((dataGibbs$Max_Temp[20]+1):maxTemp),T)] + 
+          dataGibbs$F[21] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[21] - dataGibbs$H[21])
+
+H_V2O5 <- c(dataGibbs$A[22]*t[match(c(lowTemp:dataGibbs$Max_Temp[22]), T)] +
+          (dataGibbs$B[22]*t[match(c(lowTemp:dataGibbs$Max_Temp[22]), T)]^2)/2 +
+          (dataGibbs$C[22]*t[match(c(lowTemp:dataGibbs$Max_Temp[22]), T)]^3)/3 +
+          (dataGibbs$D[22]*t[match(c(lowTemp:dataGibbs$Max_Temp[22]), T)]^4)/4 -
+          dataGibbs$E[22]/t[match(c(lowTemp:dataGibbs$Max_Temp[22]), T)] + 
+          dataGibbs$F[22] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[22] - dataGibbs$H[22], 
+        dataGibbs$A[23]*t[match(c((dataGibbs$Max_Temp[22]+1):maxTemp),T)] +
+          (dataGibbs$B[23]*t[match(c((dataGibbs$Max_Temp[22]+1):maxTemp),T)]^2)/2 +
+          (dataGibbs$C[23]*t[match(c((dataGibbs$Max_Temp[22]+1):maxTemp),T)]^3)/3 +
+          (dataGibbs$D[23]*t[match(c((dataGibbs$Max_Temp[22]+1):maxTemp),T)]^4)/4 -
+          dataGibbs$E[23]/t[match(c((dataGibbs$Max_Temp[22]+1):maxTemp),T)] + 
+          dataGibbs$F[23] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[23] - dataGibbs$H[23])
+
+H_Ti_alpha <- c(dataGibbs$A[24]*t[match(c(lowTemp:dataGibbs$Max_Temp[24]), T)] +
+          (dataGibbs$B[24]*t[match(c(lowTemp:dataGibbs$Max_Temp[24]), T)]^2)/2 +
+          (dataGibbs$C[24]*t[match(c(lowTemp:dataGibbs$Max_Temp[24]), T)]^3)/3 +
+          (dataGibbs$D[24]*t[match(c(lowTemp:dataGibbs$Max_Temp[24]), T)]^4)/4 -
+          dataGibbs$E[24]/t[match(c(lowTemp:dataGibbs$Max_Temp[24]), T)] + 
+          dataGibbs$F[24] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[24] - dataGibbs$H[24], 
+        dataGibbs$A[25]*t[match(c((dataGibbs$Max_Temp[24]+1):dataGibbs$Max_Temp[25]),T)] +
+          (dataGibbs$B[25]*t[match(c((dataGibbs$Max_Temp[24]+1):dataGibbs$Max_Temp[25]),T)]^2)/2 +
+          (dataGibbs$C[25]*t[match(c((dataGibbs$Max_Temp[24]+1):dataGibbs$Max_Temp[25]),T)]^3)/3 +
+          (dataGibbs$D[25]*t[match(c((dataGibbs$Max_Temp[24]+1):dataGibbs$Max_Temp[25]),T)]^4)/4 -
+          dataGibbs$E[25]/t[match(c((dataGibbs$Max_Temp[24]+1):dataGibbs$Max_Temp[25]),T)] + 
+          dataGibbs$F[25] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[25] - dataGibbs$H[25],
+        dataGibbs$A[27]*t[match(c((dataGibbs$Max_Temp[25]+1):maxTemp), T)] +
+          (dataGibbs$B[27]*t[match(c((dataGibbs$Max_Temp[25]+1):maxTemp), T)]^2)/2 +
+          (dataGibbs$C[27]*t[match(c((dataGibbs$Max_Temp[25]+1):maxTemp), T)]^3)/3 +
+          (dataGibbs$D[27]*t[match(c((dataGibbs$Max_Temp[25]+1):maxTemp), T)]^4)/4 -
+          dataGibbs$E[27]/t[match(c((dataGibbs$Max_Temp[25]+1):maxTemp), T)] + 
+          dataGibbs$F[27] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[27] - dataGibbs$H[27])
+
+H_Ti_beta <- c(dataGibbs$A[26]*t[match(c(lowTemp:dataGibbs$Max_Temp[26]), T)] +
+          (dataGibbs$B[26]*t[match(c(lowTemp:dataGibbs$Max_Temp[26]), T)]^2)/2 +
+          (dataGibbs$C[26]*t[match(c(lowTemp:dataGibbs$Max_Temp[26]), T)]^3)/3 +
+          (dataGibbs$D[26]*t[match(c(lowTemp:dataGibbs$Max_Temp[26]), T)]^4)/4 -
+          dataGibbs$E[26]/t[match(c(lowTemp:dataGibbs$Max_Temp[26]), T)] + 
+          dataGibbs$F[26] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[26] - dataGibbs$H[26], 
+        dataGibbs$A[27]*t[match(c((dataGibbs$Max_Temp[26]+1):maxTemp),T)] +
+          (dataGibbs$B[27]*t[match(c((dataGibbs$Max_Temp[26]+1):maxTemp),T)]^2)/2 +
+          (dataGibbs$C[27]*t[match(c((dataGibbs$Max_Temp[26]+1):maxTemp),T)]^3)/3 +
+          (dataGibbs$D[27]*t[match(c((dataGibbs$Max_Temp[26]+1):maxTemp),T)]^4)/4 -
+          dataGibbs$E[27]/t[match(c((dataGibbs$Max_Temp[26]+1):maxTemp),T)] + 
+          dataGibbs$F[27] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[27] - dataGibbs$H[27])
+
+H_Ti2O3 <- c(dataGibbs$A[28]*t[match(c(lowTemp:dataGibbs$Max_Temp[28]), T)] +
+          (dataGibbs$B[28]*t[match(c(lowTemp:dataGibbs$Max_Temp[28]), T)]^2)/2 +
+          (dataGibbs$C[28]*t[match(c(lowTemp:dataGibbs$Max_Temp[28]), T)]^3)/3 +
+          (dataGibbs$D[28]*t[match(c(lowTemp:dataGibbs$Max_Temp[28]), T)]^4)/4 -
+          dataGibbs$E[28]/t[match(c(lowTemp:dataGibbs$Max_Temp[28]), T)] + 
+          dataGibbs$F[28] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[28] - dataGibbs$H[28], 
+        dataGibbs$A[29]*t[match(c((dataGibbs$Max_Temp[28]+1):dataGibbs$Max_Temp[29]),T)] +
+          (dataGibbs$B[29]*t[match(c((dataGibbs$Max_Temp[28]+1):dataGibbs$Max_Temp[29]),T)]^2)/2 +
+          (dataGibbs$C[29]*t[match(c((dataGibbs$Max_Temp[28]+1):dataGibbs$Max_Temp[29]),T)]^3)/3 +
+          (dataGibbs$D[29]*t[match(c((dataGibbs$Max_Temp[28]+1):dataGibbs$Max_Temp[29]),T)]^4)/4 -
+          dataGibbs$E[29]/t[match(c((dataGibbs$Max_Temp[28]+1):dataGibbs$Max_Temp[29]),T)] + 
+          dataGibbs$F[29] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[29] - dataGibbs$H[29],
+        dataGibbs$A[30]*t[match(c((dataGibbs$Max_Temp[29]+1):maxTemp), T)] +
+          (dataGibbs$B[30]*t[match(c((dataGibbs$Max_Temp[29]+1):maxTemp), T)]^2)/2 +
+          (dataGibbs$C[30]*t[match(c((dataGibbs$Max_Temp[29]+1):maxTemp), T)]^3)/3 +
+          (dataGibbs$D[30]*t[match(c((dataGibbs$Max_Temp[29]+1):maxTemp), T)]^4)/4 -
+          dataGibbs$E[30]/t[match(c((dataGibbs$Max_Temp[29]+1):maxTemp), T)] + 
+          dataGibbs$F[30] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[30] - dataGibbs$H[30])
+
+H_TiO_alpha <- c(dataGibbs$A[31]*t[match(c(lowTemp:dataGibbs$Max_Temp[31]), T)] +
+          (dataGibbs$B[31]*t[match(c(lowTemp:dataGibbs$Max_Temp[31]), T)]^2)/2 +
+          (dataGibbs$C[31]*t[match(c(lowTemp:dataGibbs$Max_Temp[31]), T)]^3)/3 +
+          (dataGibbs$D[31]*t[match(c(lowTemp:dataGibbs$Max_Temp[31]), T)]^4)/4 -
+          dataGibbs$E[31]/t[match(c(lowTemp:dataGibbs$Max_Temp[31]), T)] + 
+          dataGibbs$F[31] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[31] - dataGibbs$H[31], 
+        dataGibbs$A[33]*t[match(c((dataGibbs$Max_Temp[31]+1):maxTemp),T)] +
+          (dataGibbs$B[33]*t[match(c((dataGibbs$Max_Temp[31]+1):maxTemp),T)]^2)/2 +
+          (dataGibbs$C[33]*t[match(c((dataGibbs$Max_Temp[31]+1):maxTemp),T)]^3)/3 +
+          (dataGibbs$D[33]*t[match(c((dataGibbs$Max_Temp[31]+1):maxTemp),T)]^4)/4 -
+          dataGibbs$E[33]/t[match(c((dataGibbs$Max_Temp[31]+1):maxTemp),T)] + 
+          dataGibbs$F[33] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[33] - dataGibbs$H[33])
+
+H_TiO_beta <- c(dataGibbs$A[32]*t[match(c(lowTemp:dataGibbs$Max_Temp[32]), T)] +
+          (dataGibbs$B[32]*t[match(c(lowTemp:dataGibbs$Max_Temp[32]), T)]^2)/2 +
+          (dataGibbs$C[32]*t[match(c(lowTemp:dataGibbs$Max_Temp[32]), T)]^3)/3 +
+          (dataGibbs$D[32]*t[match(c(lowTemp:dataGibbs$Max_Temp[32]), T)]^4)/4 -
+          dataGibbs$E[32]/t[match(c(lowTemp:dataGibbs$Max_Temp[32]), T)] + 
+          dataGibbs$F[32]  + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[32] - dataGibbs$H[32], 
+        dataGibbs$A[33]*t[match(c((dataGibbs$Max_Temp[32]+1):maxTemp),T)] +
+          (dataGibbs$B[33]*t[match(c((dataGibbs$Max_Temp[32]+1):maxTemp),T)]^2)/2 +
+          (dataGibbs$C[33]*t[match(c((dataGibbs$Max_Temp[32]+1):maxTemp),T)]^3)/3 +
+          (dataGibbs$D[33]*t[match(c((dataGibbs$Max_Temp[32]+1):maxTemp),T)]^4)/4 -
+          dataGibbs$E[33]/t[match(c((dataGibbs$Max_Temp[32]+1):maxTemp),T)] + 
+          dataGibbs$F[33] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[33] - dataGibbs$H[33])
+
+H_Cu <- c(dataGibbs$A[34]*t[match(c(lowTemp:dataGibbs$Max_Temp[34]), T)] +
+          (dataGibbs$B[34]*t[match(c(lowTemp:dataGibbs$Max_Temp[34]), T)]^2)/2 +
+          (dataGibbs$C[34]*t[match(c(lowTemp:dataGibbs$Max_Temp[34]), T)]^3)/3 +
+          (dataGibbs$D[34]*t[match(c(lowTemp:dataGibbs$Max_Temp[34]), T)]^4)/4 -
+          dataGibbs$E[34]/t[match(c(lowTemp:dataGibbs$Max_Temp[34]), T)] + 
+          dataGibbs$F[34] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[34] - dataGibbs$H[34], 
+        dataGibbs$A[35]*t[match(c((dataGibbs$Max_Temp[34]+1):maxTemp),T)] +
+          (dataGibbs$B[35]*t[match(c((dataGibbs$Max_Temp[34]+1):maxTemp),T)]^2)/2 +
+          (dataGibbs$C[35]*t[match(c((dataGibbs$Max_Temp[34]+1):maxTemp),T)]^3)/3 +
+          (dataGibbs$D[35]*t[match(c((dataGibbs$Max_Temp[34]+1):maxTemp),T)]^4)/4 -
+          dataGibbs$E[35]/t[match(c((dataGibbs$Max_Temp[34]+1):maxTemp),T)] + 
+          dataGibbs$F[35] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[35] - dataGibbs$H[35])
+
+H_Cu2O <- c(dataGibbs$A[36]*t[match(c(lowTemp:dataGibbs$Max_Temp[36]), T)] +
+          (dataGibbs$B[36]*t[match(c(lowTemp:dataGibbs$Max_Temp[36]), T)]^2)/2 +
+          (dataGibbs$C[36]*t[match(c(lowTemp:dataGibbs$Max_Temp[36]), T)]^3)/3 +
+          (dataGibbs$D[36]*t[match(c(lowTemp:dataGibbs$Max_Temp[36]), T)]^4)/4 -
+          dataGibbs$E[36]/t[match(c(lowTemp:dataGibbs$Max_Temp[36]), T)] + 
+          dataGibbs$F[36] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[36] - dataGibbs$H[36], 
+        dataGibbs$A[37]*t[match(c((dataGibbs$Max_Temp[36]+1):dataGibbs$Max_Temp[37]),T)] +
+          (dataGibbs$B[37]*t[match(c((dataGibbs$Max_Temp[36]+1):dataGibbs$Max_Temp[37]),T)]^2)/2 +
+          (dataGibbs$C[37]*t[match(c((dataGibbs$Max_Temp[36]+1):dataGibbs$Max_Temp[37]),T)]^3)/3 +
+          (dataGibbs$D[37]*t[match(c((dataGibbs$Max_Temp[36]+1):dataGibbs$Max_Temp[37]),T)]^4)/4 -
+          dataGibbs$E[37]/t[match(c((dataGibbs$Max_Temp[36]+1):dataGibbs$Max_Temp[37]),T)] + 
+          dataGibbs$F[37] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[37] - dataGibbs$H[37],
+        dataGibbs$A[38]*t[match(c((dataGibbs$Max_Temp[37]+1):maxTemp), T)] +
+          (dataGibbs$B[38]*t[match(c((dataGibbs$Max_Temp[37]+1):maxTemp), T)]^2)/2 +
+          (dataGibbs$C[38]*t[match(c((dataGibbs$Max_Temp[37]+1):maxTemp), T)]^3)/3 +
+          (dataGibbs$D[38]*t[match(c((dataGibbs$Max_Temp[37]+1):maxTemp), T)]^4)/4 -
+          dataGibbs$E[38]/t[match(c((dataGibbs$Max_Temp[37]+1):maxTemp), T)] + 
+          dataGibbs$F[38] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[38] - dataGibbs$H[38])
+
+H_CuO <- c(dataGibbs$A[39]*t[match(c(lowTemp:maxTemp), T)] +
+          (dataGibbs$B[39]*t[match(c(lowTemp:maxTemp), T)]^2)/2 +
+          (dataGibbs$C[39]*t[match(c(lowTemp:maxTemp), T)]^3)/3 +
+          (dataGibbs$D[39]*t[match(c(lowTemp:maxTemp), T)]^4)/4 -
+          dataGibbs$E[39]/t[match(c(lowTemp:maxTemp), T)] + 
+          dataGibbs$F[39] + dataGibbs$`Enthalpy of Formation (H298) kJ/mol`[39] - dataGibbs$H[39])
+```
+
+
+### Create entropy arrays for respective coefficients and temperature ranges
+#### S(J/mol) = A*ln(t) + B*t + (C*t^2)/2 + (D*t^3)/3 - E/(2*t^2) + G
+```{r}
+S_O2 <- c(dataGibbs$A[1]*log(t[match(c(lowTemp:dataGibbs$Max_Temp[1]), T)]) +
+            dataGibbs$B[1]*t[match(c(lowTemp:dataGibbs$Max_Temp[1]), T)] +
+            (dataGibbs$C[1]*t[match(c(lowTemp:dataGibbs$Max_Temp[1]), T)]^2)/2 +
+            (dataGibbs$D[1]*t[match(c(lowTemp:dataGibbs$Max_Temp[1]), T)]^3)/3 -
+            dataGibbs$E[1]/(2*t[match(c(lowTemp:dataGibbs$Max_Temp[1]), T)]^2) +
+            dataGibbs$G[1],
+          dataGibbs$A[2]*log(t[match(c((dataGibbs$Max_Temp[1]+1):dataGibbs$Max_Temp[2]), T)]) +
+            dataGibbs$B[2]*t[match(c((dataGibbs$Max_Temp[1]+1):dataGibbs$Max_Temp[2]), T)] +
+            (dataGibbs$C[2]*t[match(c((dataGibbs$Max_Temp[1]+1):dataGibbs$Max_Temp[2]), T)]^2)/2 +
+            (dataGibbs$D[2]*t[match(c((dataGibbs$Max_Temp[1]+1):dataGibbs$Max_Temp[2]), T)]^3)/3 -
+            dataGibbs$E[2]/(2*t[match(c((dataGibbs$Max_Temp[1]+1):dataGibbs$Max_Temp[2]), T)]^2) +
+            dataGibbs$G[2],
+          dataGibbs$A[3]*log(t[match(c((dataGibbs$Max_Temp[2]+1):maxTemp), T)]) +
+            dataGibbs$B[3]*t[match(c((dataGibbs$Max_Temp[2]+1):maxTemp), T)] +
+            (dataGibbs$C[3]*t[match(c((dataGibbs$Max_Temp[2]+1):maxTemp), T)]^2)/2 +
+            (dataGibbs$D[3]*t[match(c((dataGibbs$Max_Temp[2]+1):maxTemp), T)]^3)/3 -
+            dataGibbs$E[3]/(2*t[match(c((dataGibbs$Max_Temp[2]+1):maxTemp), T)]^2) +
+            dataGibbs$G[3])
+
+S_Si <- c(dataGibbs$A[4]*log(t[match(c(lowTemp:dataGibbs$Max_Temp[4]), T)]) +
+            dataGibbs$B[4]*t[match(c(lowTemp:dataGibbs$Max_Temp[4]), T)] +
+            (dataGibbs$C[4]*t[match(c(lowTemp:dataGibbs$Max_Temp[4]), T)]^2)/2 +
+            (dataGibbs$D[4]*t[match(c(lowTemp:dataGibbs$Max_Temp[4]), T)]^3)/3 -
+            dataGibbs$E[4]/(2*t[match(c(lowTemp:dataGibbs$Max_Temp[4]), T)]^2) +
+            dataGibbs$G[4],
+          dataGibbs$A[5]*log(t[match(c((dataGibbs$Max_Temp[4]+1):maxTemp), T)]) +
+            dataGibbs$B[5]*t[match(c((dataGibbs$Max_Temp[4]+1):maxTemp), T)] +
+            (dataGibbs$C[5]*t[match(c((dataGibbs$Max_Temp[4]+1):maxTemp), T)]^2)/2 +
+            (dataGibbs$D[5]*t[match(c((dataGibbs$Max_Temp[4]+1):maxTemp), T)]^3)/3 -
+            dataGibbs$E[5]/(2*t[match(c((dataGibbs$Max_Temp[4]+1):maxTemp), T)]^2) +
+            dataGibbs$G[5])
+
+S_SiO2 <- c(dataGibbs$A[6]*log(t[match(c(lowTemp:dataGibbs$Max_Temp[6]), T)]) +
+            dataGibbs$B[6]*t[match(c(lowTemp:dataGibbs$Max_Temp[6]), T)] +
+            (dataGibbs$C[6]*t[match(c(lowTemp:dataGibbs$Max_Temp[6]), T)]^2)/2 +
+            (dataGibbs$D[6]*t[match(c(lowTemp:dataGibbs$Max_Temp[6]), T)]^3)/3 -
+            dataGibbs$E[6]/(2*t[match(c(lowTemp:dataGibbs$Max_Temp[6]), T)]^2) +
+            dataGibbs$G[6],
+          dataGibbs$A[7]*log(t[match(c((dataGibbs$Max_Temp[6]+1):dataGibbs$Max_Temp[7]), T)]) +
+            dataGibbs$B[7]*t[match(c((dataGibbs$Max_Temp[6]+1):dataGibbs$Max_Temp[7]), T)] +
+            (dataGibbs$C[7]*t[match(c((dataGibbs$Max_Temp[6]+1):dataGibbs$Max_Temp[7]), T)]^2)/2 +
+            (dataGibbs$D[7]*t[match(c((dataGibbs$Max_Temp[6]+1):dataGibbs$Max_Temp[7]), T)]^3)/3 -
+            dataGibbs$E[7]/(2*t[match(c((dataGibbs$Max_Temp[6]+1):dataGibbs$Max_Temp[7]), T)]^2) +
+            dataGibbs$G[7],
+          dataGibbs$A[8]*log(t[match(c((dataGibbs$Max_Temp[7]+1):maxTemp), T)]) +
+            dataGibbs$B[8]*t[match(c((dataGibbs$Max_Temp[7]+1):maxTemp), T)] +
+            (dataGibbs$C[8]*t[match(c((dataGibbs$Max_Temp[7]+1):maxTemp), T)]^2)/2 +
+            (dataGibbs$D[8]*t[match(c((dataGibbs$Max_Temp[7]+1):maxTemp), T)]^3)/3 -
+            dataGibbs$E[8]/(2*t[match(c((dataGibbs$Max_Temp[7]+1):maxTemp), T)]^2) +
+            dataGibbs$G[8])
+
+S_Al <- c(dataGibbs$A[9]*log(t[match(c(lowTemp:dataGibbs$Max_Temp[9]), T)]) +
+            dataGibbs$B[9]*t[match(c(lowTemp:dataGibbs$Max_Temp[9]), T)] +
+            (dataGibbs$C[9]*t[match(c(lowTemp:dataGibbs$Max_Temp[9]), T)]^2)/2 +
+            (dataGibbs$D[9]*t[match(c(lowTemp:dataGibbs$Max_Temp[9]), T)]^3)/3 -
+            dataGibbs$E[9]/(2*t[match(c(lowTemp:dataGibbs$Max_Temp[9]), T)]^2) +
+            dataGibbs$G[9],
+          dataGibbs$A[10]*log(t[match(c((dataGibbs$Max_Temp[9]+1):maxTemp), T)]) +
+            dataGibbs$B[10]*t[match(c((dataGibbs$Max_Temp[9]+1):maxTemp), T)] +
+            (dataGibbs$C[10]*t[match(c((dataGibbs$Max_Temp[9]+1):maxTemp), T)]^2)/2 +
+            (dataGibbs$D[10]*t[match(c((dataGibbs$Max_Temp[9]+1):maxTemp), T)]^3)/3 -
+            dataGibbs$E[10]/(2*t[match(c((dataGibbs$Max_Temp[9]+1):maxTemp), T)]^2) +
+            dataGibbs$G[10])
+
+S_Al2O3_alpha <- c(dataGibbs$A[11]*log(t[match(c(lowTemp:dataGibbs$Max_Temp[11]), T)]) +
+            dataGibbs$B[11]*t[match(c(lowTemp:dataGibbs$Max_Temp[11]), T)] +
+            (dataGibbs$C[11]*t[match(c(lowTemp:dataGibbs$Max_Temp[11]), T)]^2)/2 +
+            (dataGibbs$D[11]*t[match(c(lowTemp:dataGibbs$Max_Temp[11]), T)]^3)/3 -
+            dataGibbs$E[11]/(2*t[match(c(lowTemp:dataGibbs$Max_Temp[11]), T)]^2) +
+            dataGibbs$G[11],
+          dataGibbs$A[15]*log(t[match(c((dataGibbs$Max_Temp[11]+1):maxTemp), T)]) +
+            dataGibbs$B[15]*t[match(c((dataGibbs$Max_Temp[11]+1):maxTemp), T)] +
+            (dataGibbs$C[15]*t[match(c((dataGibbs$Max_Temp[11]+1):maxTemp), T)]^2)/2 +
+            (dataGibbs$D[15]*t[match(c((dataGibbs$Max_Temp[11]+1):maxTemp), T)]^3)/3 -
+            dataGibbs$E[15]/(2*t[match(c((dataGibbs$Max_Temp[11]+1):maxTemp), T)]^2) +
+            dataGibbs$G[15])
+
+S_Al2O3_gamma <- c(dataGibbs$A[12]*log(t[match(c(lowTemp:dataGibbs$Max_Temp[12]), T)]) +
+            dataGibbs$B[12]*t[match(c(lowTemp:dataGibbs$Max_Temp[12]), T)] +
+            (dataGibbs$C[12]*t[match(c(lowTemp:dataGibbs$Max_Temp[12]), T)]^2)/2 +
+            (dataGibbs$D[12]*t[match(c(lowTemp:dataGibbs$Max_Temp[12]), T)]^3)/3 -
+            dataGibbs$E[12]/(2*t[match(c(lowTemp:dataGibbs$Max_Temp[12]), T)]^2) +
+            dataGibbs$G[12],
+          dataGibbs$A[15]*log(t[match(c((dataGibbs$Max_Temp[12]+1):maxTemp), T)]) +
+            dataGibbs$B[15]*t[match(c((dataGibbs$Max_Temp[12]+1):maxTemp), T)] +
+            (dataGibbs$C[15]*t[match(c((dataGibbs$Max_Temp[12]+1):maxTemp), T)]^2)/2 +
+            (dataGibbs$D[15]*t[match(c((dataGibbs$Max_Temp[12]+1):maxTemp), T)]^3)/3 -
+            dataGibbs$E[15]/(2*t[match(c((dataGibbs$Max_Temp[12]+1):maxTemp), T)]^2) +
+            dataGibbs$G[15])
+
+S_Al2O3_delta <- c(dataGibbs$A[13]*log(t[match(c(lowTemp:dataGibbs$Max_Temp[13]), T)]) +
+            dataGibbs$B[13]*t[match(c(lowTemp:dataGibbs$Max_Temp[13]), T)] +
+            (dataGibbs$C[13]*t[match(c(lowTemp:dataGibbs$Max_Temp[13]), T)]^2)/2 +
+            (dataGibbs$D[13]*t[match(c(lowTemp:dataGibbs$Max_Temp[13]), T)]^3)/3 -
+            dataGibbs$E[13]/(2*t[match(c(lowTemp:dataGibbs$Max_Temp[13]), T)]^2) +
+            dataGibbs$G[13],
+          dataGibbs$A[15]*log(t[match(c((dataGibbs$Max_Temp[13]+1):maxTemp), T)]) +
+            dataGibbs$B[15]*t[match(c((dataGibbs$Max_Temp[13]+1):maxTemp), T)] +
+            (dataGibbs$C[15]*t[match(c((dataGibbs$Max_Temp[13]+1):maxTemp), T)]^2)/2 +
+            (dataGibbs$D[15]*t[match(c((dataGibbs$Max_Temp[13]+1):maxTemp), T)]^3)/3 -
+            dataGibbs$E[15]/(2*t[match(c((dataGibbs$Max_Temp[13]+1):maxTemp), T)]^2) +
+            dataGibbs$G[15])
+
+S_Al2O3_kappa <- c(dataGibbs$A[14]*log(t[match(c(lowTemp:dataGibbs$Max_Temp[14]), T)]) +
+            dataGibbs$B[14]*t[match(c(lowTemp:dataGibbs$Max_Temp[14]), T)] +
+            (dataGibbs$C[14]*t[match(c(lowTemp:dataGibbs$Max_Temp[14]), T)]^2)/2 +
+            (dataGibbs$D[14]*t[match(c(lowTemp:dataGibbs$Max_Temp[14]), T)]^3)/3 -
+            dataGibbs$E[14]/(2*t[match(c(lowTemp:dataGibbs$Max_Temp[14]), T)]^2) +
+            dataGibbs$G[14],
+          dataGibbs$A[15]*log(t[match(c((dataGibbs$Max_Temp[14]+1):maxTemp), T)]) +
+            dataGibbs$B[15]*t[match(c((dataGibbs$Max_Temp[14]+1):maxTemp), T)] +
+            (dataGibbs$C[15]*t[match(c((dataGibbs$Max_Temp[14]+1):maxTemp), T)]^2)/2 +
+            (dataGibbs$D[15]*t[match(c((dataGibbs$Max_Temp[14]+1):maxTemp), T)]^3)/3 -
+            dataGibbs$E[15]/(2*t[match(c((dataGibbs$Max_Temp[14]+1):maxTemp), T)]^2) +
+            dataGibbs$G[15])
+
+S_V <- c(dataGibbs$A[16]*log(t[match(c(lowTemp:dataGibbs$Max_Temp[16]), T)]) +
+            dataGibbs$B[16]*t[match(c(lowTemp:dataGibbs$Max_Temp[16]), T)] +
+            (dataGibbs$C[16]*t[match(c(lowTemp:dataGibbs$Max_Temp[16]), T)]^2)/2 +
+            (dataGibbs$D[16]*t[match(c(lowTemp:dataGibbs$Max_Temp[16]), T)]^3)/3 -
+            dataGibbs$E[16]/(2*t[match(c(lowTemp:dataGibbs$Max_Temp[16]), T)]^2) +
+            dataGibbs$G[16],
+          dataGibbs$A[17]*log(t[match(c((dataGibbs$Max_Temp[16]+1):maxTemp), T)]) +
+            dataGibbs$B[17]*t[match(c((dataGibbs$Max_Temp[16]+1):maxTemp), T)] +
+            (dataGibbs$C[17]*t[match(c((dataGibbs$Max_Temp[16]+1):maxTemp), T)]^2)/2 +
+            (dataGibbs$D[17]*t[match(c((dataGibbs$Max_Temp[16]+1):maxTemp), T)]^3)/3 -
+            dataGibbs$E[17]/(2*t[match(c((dataGibbs$Max_Temp[16]+1):maxTemp), T)]^2) +
+            dataGibbs$G[17])
+
+S_VO <- c(dataGibbs$A[18]*log(t[match(c(lowTemp:dataGibbs$Max_Temp[18]), T)]) +
+            dataGibbs$B[18]*t[match(c(lowTemp:dataGibbs$Max_Temp[18]), T)] +
+            (dataGibbs$C[18]*t[match(c(lowTemp:dataGibbs$Max_Temp[18]), T)]^2)/2 +
+            (dataGibbs$D[18]*t[match(c(lowTemp:dataGibbs$Max_Temp[18]), T)]^3)/3 -
+            dataGibbs$E[18]/(2*t[match(c(lowTemp:dataGibbs$Max_Temp[18]), T)]^2) +
+            dataGibbs$G[18],
+          dataGibbs$A[19]*log(t[match(c((dataGibbs$Max_Temp[18]+1):maxTemp), T)]) +
+            dataGibbs$B[19]*t[match(c((dataGibbs$Max_Temp[18]+1):maxTemp), T)] +
+            (dataGibbs$C[19]*t[match(c((dataGibbs$Max_Temp[18]+1):maxTemp), T)]^2)/2 +
+            (dataGibbs$D[19]*t[match(c((dataGibbs$Max_Temp[18]+1):maxTemp), T)]^3)/3 -
+            dataGibbs$E[19]/(2*t[match(c((dataGibbs$Max_Temp[18]+1):maxTemp), T)]^2) +
+            dataGibbs$G[19])
+
+S_V2O3 <- c(dataGibbs$A[20]*log(t[match(c(lowTemp:dataGibbs$Max_Temp[20]), T)]) +
+            dataGibbs$B[20]*t[match(c(lowTemp:dataGibbs$Max_Temp[20]), T)] +
+            (dataGibbs$C[20]*t[match(c(lowTemp:dataGibbs$Max_Temp[20]), T)]^2)/2 +
+            (dataGibbs$D[20]*t[match(c(lowTemp:dataGibbs$Max_Temp[20]), T)]^3)/3 -
+            dataGibbs$E[20]/(2*t[match(c(lowTemp:dataGibbs$Max_Temp[20]), T)]^2) +
+            dataGibbs$G[20],
+          dataGibbs$A[21]*log(t[match(c((dataGibbs$Max_Temp[20]+1):maxTemp), T)]) +
+            dataGibbs$B[21]*t[match(c((dataGibbs$Max_Temp[20]+1):maxTemp), T)] +
+            (dataGibbs$C[21]*t[match(c((dataGibbs$Max_Temp[20]+1):maxTemp), T)]^2)/2 +
+            (dataGibbs$D[21]*t[match(c((dataGibbs$Max_Temp[20]+1):maxTemp), T)]^3)/3 -
+            dataGibbs$E[21]/(2*t[match(c((dataGibbs$Max_Temp[20]+1):maxTemp), T)]^2) +
+            dataGibbs$G[21])
+
+S_V2O5 <- c(dataGibbs$A[22]*log(t[match(c(lowTemp:dataGibbs$Max_Temp[22]), T)]) +
+            dataGibbs$B[22]*t[match(c(lowTemp:dataGibbs$Max_Temp[22]), T)] +
+            (dataGibbs$C[22]*t[match(c(lowTemp:dataGibbs$Max_Temp[22]), T)]^2)/2 +
+            (dataGibbs$D[22]*t[match(c(lowTemp:dataGibbs$Max_Temp[22]), T)]^3)/3 -
+            dataGibbs$E[22]/(2*t[match(c(lowTemp:dataGibbs$Max_Temp[22]), T)]^2) +
+            dataGibbs$G[22],
+          dataGibbs$A[23]*log(t[match(c((dataGibbs$Max_Temp[22]+1):maxTemp), T)]) +
+            dataGibbs$B[23]*t[match(c((dataGibbs$Max_Temp[22]+1):maxTemp), T)] +
+            (dataGibbs$C[23]*t[match(c((dataGibbs$Max_Temp[22]+1):maxTemp), T)]^2)/2 +
+            (dataGibbs$D[23]*t[match(c((dataGibbs$Max_Temp[22]+1):maxTemp), T)]^3)/3 -
+            dataGibbs$E[23]/(2*t[match(c((dataGibbs$Max_Temp[22]+1):maxTemp), T)]^2) +
+            dataGibbs$G[23])
+
+S_Ti_alpha <- c(dataGibbs$A[24]*log(t[match(c(lowTemp:dataGibbs$Max_Temp[24]), T)]) +
+            dataGibbs$B[24]*t[match(c(lowTemp:dataGibbs$Max_Temp[24]), T)] +
+            (dataGibbs$C[24]*t[match(c(lowTemp:dataGibbs$Max_Temp[24]), T)]^2)/2 +
+            (dataGibbs$D[24]*t[match(c(lowTemp:dataGibbs$Max_Temp[24]), T)]^3)/3 -
+            dataGibbs$E[24]/(2*t[match(c(lowTemp:dataGibbs$Max_Temp[24]), T)]^2) +
+            dataGibbs$G[24],
+          dataGibbs$A[25]*log(t[match(c((dataGibbs$Max_Temp[24]+1):dataGibbs$Max_Temp[25]), T)]) +
+            dataGibbs$B[25]*t[match(c((dataGibbs$Max_Temp[24]+1):dataGibbs$Max_Temp[25]), T)] +
+            (dataGibbs$C[25]*t[match(c((dataGibbs$Max_Temp[24]+1):dataGibbs$Max_Temp[25]), T)]^2)/2 +
+            (dataGibbs$D[25]*t[match(c((dataGibbs$Max_Temp[24]+1):dataGibbs$Max_Temp[25]), T)]^3)/3 -
+            dataGibbs$E[25]/(2*t[match(c((dataGibbs$Max_Temp[24]+1):dataGibbs$Max_Temp[25]), T)]^2) +
+            dataGibbs$G[25],
+          dataGibbs$A[27]*log(t[match(c((dataGibbs$Max_Temp[25]+1):maxTemp), T)]) +
+            dataGibbs$B[27]*t[match(c((dataGibbs$Max_Temp[25]+1):maxTemp), T)] +
+            (dataGibbs$C[27]*t[match(c((dataGibbs$Max_Temp[25]+1):maxTemp), T)]^2)/2 +
+            (dataGibbs$D[27]*t[match(c((dataGibbs$Max_Temp[25]+1):maxTemp), T)]^3)/3 -
+            dataGibbs$E[27]/(2*t[match(c((dataGibbs$Max_Temp[25]+1):maxTemp), T)]^2) +
+            dataGibbs$G[27])
+
+S_Ti_beta <- c(dataGibbs$A[26]*log(t[match(c(lowTemp:dataGibbs$Max_Temp[26]), T)]) +
+            dataGibbs$B[26]*t[match(c(lowTemp:dataGibbs$Max_Temp[26]), T)] +
+            (dataGibbs$C[26]*t[match(c(lowTemp:dataGibbs$Max_Temp[26]), T)]^2)/2 +
+            (dataGibbs$D[26]*t[match(c(lowTemp:dataGibbs$Max_Temp[26]), T)]^3)/3 -
+            dataGibbs$E[26]/(2*t[match(c(lowTemp:dataGibbs$Max_Temp[26]), T)]^2) +
+            dataGibbs$G[26],
+          dataGibbs$A[27]*log(t[match(c((dataGibbs$Max_Temp[26]+1):maxTemp), T)]) +
+            dataGibbs$B[27]*t[match(c((dataGibbs$Max_Temp[26]+1):maxTemp), T)] +
+            (dataGibbs$C[27]*t[match(c((dataGibbs$Max_Temp[26]+1):maxTemp), T)]^2)/2 +
+            (dataGibbs$D[27]*t[match(c((dataGibbs$Max_Temp[26]+1):maxTemp), T)]^3)/3 -
+            dataGibbs$E[27]/(2*t[match(c((dataGibbs$Max_Temp[26]+1):maxTemp), T)]^2) +
+            dataGibbs$G[27])
+
+S_Ti2_O3 <- c(dataGibbs$A[28]*log(t[match(c(lowTemp:dataGibbs$Max_Temp[28]), T)]) +
+            dataGibbs$B[28]*t[match(c(lowTemp:dataGibbs$Max_Temp[28]), T)] +
+            (dataGibbs$C[28]*t[match(c(lowTemp:dataGibbs$Max_Temp[28]), T)]^2)/2 +
+            (dataGibbs$D[28]*t[match(c(lowTemp:dataGibbs$Max_Temp[28]), T)]^3)/3 -
+            dataGibbs$E[28]/(2*t[match(c(lowTemp:dataGibbs$Max_Temp[28]), T)]^2) +
+            dataGibbs$G[28],
+          dataGibbs$A[29]*log(t[match(c((dataGibbs$Max_Temp[28]+1):dataGibbs$Max_Temp[29]), T)]) +
+            dataGibbs$B[29]*t[match(c((dataGibbs$Max_Temp[28]+1):dataGibbs$Max_Temp[29]), T)] +
+            (dataGibbs$C[29]*t[match(c((dataGibbs$Max_Temp[28]+1):dataGibbs$Max_Temp[29]), T)]^2)/2 +
+            (dataGibbs$D[29]*t[match(c((dataGibbs$Max_Temp[28]+1):dataGibbs$Max_Temp[29]), T)]^3)/3 -
+            dataGibbs$E[29]/(2*t[match(c((dataGibbs$Max_Temp[28]+1):dataGibbs$Max_Temp[29]), T)]^2) +
+            dataGibbs$G[29],
+          dataGibbs$A[30]*log(t[match(c((dataGibbs$Max_Temp[29]+1):maxTemp), T)]) +
+            dataGibbs$B[30]*t[match(c((dataGibbs$Max_Temp[29]+1):maxTemp), T)] +
+            (dataGibbs$C[30]*t[match(c((dataGibbs$Max_Temp[29]+1):maxTemp), T)]^2)/2 +
+            (dataGibbs$D[30]*t[match(c((dataGibbs$Max_Temp[29]+1):maxTemp), T)]^3)/3 -
+            dataGibbs$E[30]/(2*t[match(c((dataGibbs$Max_Temp[29]+1):maxTemp), T)]^2) +
+            dataGibbs$G[30])
+
+S_TiO_alpha <- c(dataGibbs$A[31]*log(t[match(c(lowTemp:dataGibbs$Max_Temp[31]), T)]) +
+            dataGibbs$B[31]*t[match(c(lowTemp:dataGibbs$Max_Temp[31]), T)] +
+            (dataGibbs$C[31]*t[match(c(lowTemp:dataGibbs$Max_Temp[31]), T)]^2)/2 +
+            (dataGibbs$D[31]*t[match(c(lowTemp:dataGibbs$Max_Temp[31]), T)]^3)/3 -
+            dataGibbs$E[31]/(2*t[match(c(lowTemp:dataGibbs$Max_Temp[31]), T)]^2) +
+            dataGibbs$G[31],
+          dataGibbs$A[33]*log(t[match(c((dataGibbs$Max_Temp[31]+1):maxTemp), T)]) +
+            dataGibbs$B[33]*t[match(c((dataGibbs$Max_Temp[31]+1):maxTemp), T)] +
+            (dataGibbs$C[33]*t[match(c((dataGibbs$Max_Temp[31]+1):maxTemp), T)]^2)/2 +
+            (dataGibbs$D[33]*t[match(c((dataGibbs$Max_Temp[31]+1):maxTemp), T)]^3)/3 -
+            dataGibbs$E[33]/(2*t[match(c((dataGibbs$Max_Temp[31]+1):maxTemp), T)]^2) +
+            dataGibbs$G[33])
+
+S_TiO_beta <- c(dataGibbs$A[32]*log(t[match(c(lowTemp:dataGibbs$Max_Temp[32]), T)]) +
+            dataGibbs$B[32]*t[match(c(lowTemp:dataGibbs$Max_Temp[32]), T)] +
+            (dataGibbs$C[32]*t[match(c(lowTemp:dataGibbs$Max_Temp[32]), T)]^2)/2 +
+            (dataGibbs$D[32]*t[match(c(lowTemp:dataGibbs$Max_Temp[32]), T)]^3)/3 -
+            dataGibbs$E[32]/(2*t[match(c(lowTemp:dataGibbs$Max_Temp[32]), T)]^2) +
+            dataGibbs$G[32],
+          dataGibbs$A[33]*log(t[match(c((dataGibbs$Max_Temp[32]+1):maxTemp), T)]) +
+            dataGibbs$B[33]*t[match(c((dataGibbs$Max_Temp[32]+1):maxTemp), T)] +
+            (dataGibbs$C[33]*t[match(c((dataGibbs$Max_Temp[32]+1):maxTemp), T)]^2)/2 +
+            (dataGibbs$D[33]*t[match(c((dataGibbs$Max_Temp[32]+1):maxTemp), T)]^3)/3 -
+            dataGibbs$E[33]/(2*t[match(c((dataGibbs$Max_Temp[32]+1):maxTemp), T)]^2) +
+            dataGibbs$G[33])
+
+S_Cu <- c(dataGibbs$A[34]*log(t[match(c(lowTemp:dataGibbs$Max_Temp[34]), T)]) +
+            dataGibbs$B[34]*t[match(c(lowTemp:dataGibbs$Max_Temp[34]), T)] +
+            (dataGibbs$C[34]*t[match(c(lowTemp:dataGibbs$Max_Temp[34]), T)]^2)/2 +
+            (dataGibbs$D[34]*t[match(c(lowTemp:dataGibbs$Max_Temp[34]), T)]^3)/3 -
+            dataGibbs$E[34]/(2*t[match(c(lowTemp:dataGibbs$Max_Temp[34]), T)]^2) +
+            dataGibbs$G[34],
+          dataGibbs$A[35]*log(t[match(c((dataGibbs$Max_Temp[34]+1):maxTemp), T)]) +
+            dataGibbs$B[35]*t[match(c((dataGibbs$Max_Temp[34]+1):maxTemp), T)] +
+            (dataGibbs$C[35]*t[match(c((dataGibbs$Max_Temp[34]+1):maxTemp), T)]^2)/2 +
+            (dataGibbs$D[35]*t[match(c((dataGibbs$Max_Temp[34]+1):maxTemp), T)]^3)/3 -
+            dataGibbs$E[35]/(2*t[match(c((dataGibbs$Max_Temp[34]+1):maxTemp), T)]^2) +
+            dataGibbs$G[35])
+
+S_Cu2O <- c(dataGibbs$A[36]*log(t[match(c(lowTemp:dataGibbs$Max_Temp[36]), T)]) +
+            dataGibbs$B[36]*t[match(c(lowTemp:dataGibbs$Max_Temp[36]), T)] +
+            (dataGibbs$C[36]*t[match(c(lowTemp:dataGibbs$Max_Temp[36]), T)]^2)/2 +
+            (dataGibbs$D[36]*t[match(c(lowTemp:dataGibbs$Max_Temp[36]), T)]^3)/3 -
+            dataGibbs$E[36]/(2*t[match(c(lowTemp:dataGibbs$Max_Temp[36]), T)]^2) +
+            dataGibbs$G[36],
+          dataGibbs$A[37]*log(t[match(c((dataGibbs$Max_Temp[36]+1):dataGibbs$Max_Temp[37]), T)]) +
+            dataGibbs$B[37]*t[match(c((dataGibbs$Max_Temp[36]+1):dataGibbs$Max_Temp[37]), T)] +
+            (dataGibbs$C[37]*t[match(c((dataGibbs$Max_Temp[36]+1):dataGibbs$Max_Temp[37]), T)]^2)/2 +
+            (dataGibbs$D[37]*t[match(c((dataGibbs$Max_Temp[36]+1):dataGibbs$Max_Temp[37]), T)]^3)/3 -
+            dataGibbs$E[37]/(2*t[match(c((dataGibbs$Max_Temp[36]+1):dataGibbs$Max_Temp[37]), T)]^2) +
+            dataGibbs$G[37],
+          dataGibbs$A[38]*log(t[match(c((dataGibbs$Max_Temp[37]+1):maxTemp), T)]) +
+            dataGibbs$B[38]*t[match(c((dataGibbs$Max_Temp[37]+1):maxTemp), T)] +
+            (dataGibbs$C[38]*t[match(c((dataGibbs$Max_Temp[37]+1):maxTemp), T)]^2)/2 +
+            (dataGibbs$D[38]*t[match(c((dataGibbs$Max_Temp[37]+1):maxTemp), T)]^3)/3 -
+            dataGibbs$E[38]/(2*t[match(c((dataGibbs$Max_Temp[37]+1):maxTemp), T)]^2) +
+            dataGibbs$G[38])
+
+S_CuO <- c(dataGibbs$A[39]*log(t[match(c(lowTemp:maxTemp), T)]) +
+            dataGibbs$B[39]*t[match(c(lowTemp:maxTemp), T)] +
+            (dataGibbs$C[39]*t[match(c(lowTemp:maxTemp), T)]^2)/2 +
+            (dataGibbs$D[39]*t[match(c(lowTemp:maxTemp), T)]^3)/3 -
+            dataGibbs$E[39]/(2*t[match(c(lowTemp:maxTemp), T)]^2) +
+            dataGibbs$G[39])
+```
+
+###Caluculate Gibbs Free Energy of each chemical
+```{r}
+O2 <- H_O2-t*S_O2
+
+Si <- H_Si-t*S_Si
+
+SiO2 <- H_SiO2-t*S_SiO2
+
+Al <- H_Al-t*S_Al
+
+Al2O3_alpha <- H_Al2O3_alpha-t*S_Al2O3_alpha
+
+Al2O3_delta <- H_Al2O3_delta-t*S_Al2O3_delta
+
+Al2O3_gamma <- H_Al2O3_gamma-t*S_Al2O3_gamma
+
+Al2O3_kappa <- H_Al2O3_kappa-t*S_Al2O3_kappa
+
+V <- H_V-t*S_V
+
+VO <- H_VO-t*S_VO
+
+V2O3 <- H_V2O3-t*S_V2O3
+
+V2O5 <- H_V2O5-t*S_V2O5
+
+Ti_alpha <- H_Ti_alpha-t*S_Ti_alpha
+
+Ti_beta <- H_Ti_beta-t*S_Ti_beta
+
+Ti2O3 <- H_Ti2O3-t*S_Ti2_O3
+
+TiO_alpha <- H_TiO_alpha-t*S_TiO_alpha
+
+TiO_beta <- H_TiO_beta-t*S_TiO_beta
+
+Cu <- H_Cu-t*S_Cu
+
+Cu2O <- H_Cu2O-t*S_Cu2O
+
+CuO <- H_CuO-t*S_CuO
+```
+
+### Assemble data frames
+```{r}
+H <- data.frame(H_O2, H_Si, H_SiO2, H_Al, H_Al2O3_alpha, H_Al2O3_delta, H_Al2O3_gamma, H_Al2O3_kappa,
+                H_V, H_VO, H_V2O3, H_V2O5, H_Ti_alpha, H_Ti_beta, H_Ti2O3, H_TiO_alpha, H_TiO_beta,
+                H_Cu, H_Cu2O, H_CuO)
+
+S <- data.frame(S_O2, S_Si, S_SiO2, S_Al, S_Al2O3_alpha, S_Al2O3_delta, S_Al2O3_gamma, S_Al2O3_kappa,
+                S_V, S_VO, S_V2O3, S_V2O5, S_Ti_alpha, S_Ti_beta, S_Ti2_O3, S_TiO_alpha, S_TiO_beta,
+                S_Cu, S_Cu2O, S_CuO)
+
+GibbsFreeEnergy <- data.frame(O2, Si, SiO2, Al, Al2O3_alpha, Al2O3_delta, Al2O3_gamma, Al2O3_kappa,
+                              V, VO, V2O3, V2O5, Ti_alpha, Ti_beta, Ti2O3, TiO_alpha, TiO_beta,
+                              Cu, Cu2O, CuO)
+
+write.csv(H, 'H.csv')
+write.csv(S, 'S.csv')
+write.csv(GibbsFreeEnergy, 'GibbsFreeEnergy.csv')
+                              
+```
+
+### Reactions
+```{r}
+Al2O3_alpha_react <- (2*Al2O3_alpha + 3*Si) - (3*SiO2 + 4*Al)
+Al2O3_delta_react <- (2*Al2O3_delta + 3*Si) - (3*SiO2 + 4*Al)
+Al2O3_gamma_react <- (2*Al2O3_gamma + 3*Si) - (3*SiO2 + 4*Al)
+Al2O3_kappa_react <- (2*Al2O3_kappa + 3*Si) - (3*SiO2 + 4*Al)
+VO_react <- (2*VO + Si) - (SiO2 + 2*V)
+V2O3_react <- (2*V2O3 + 3*Si) - (3*SiO2 + 4*V)
+V2O5_react <- (2*V2O5 + 5*Si) - (5*SiO2 + 4*V)
+Ti2O3_a_react <- (2*Ti2O3 + 3*Si) - (3*SiO2 + 4*Ti_alpha)
+Ti2O3_b_react <- (2*Ti2O3 + 3*Si) - (3*SiO2 + 4*Ti_beta)
+TiO_aa_react <- (2*TiO_alpha + Si) - (SiO2 + 2*Ti_alpha)
+TiO_ab_react <- (2*TiO_beta + Si) - (SiO2 + 2*Ti_alpha)
+TiO_ba_react <- (2*TiO_alpha + Si) - (SiO2 + 2*Ti_beta)
+TiO_bb_react <- (2*TiO_beta + Si) - (SiO2 + 2*Ti_beta)
+Cu2O_react <- (2*Cu2O + Si) - (SiO2 + 4*Cu)
+CuO_react <- (2*CuO + Si) - (SiO2 + 2*Cu)
+
+```
+
+### Assemble Gibbs Free Energy of Reaction data frame
+```{r}
+GibbsFreeEnergy_react <- data.frame(Al2O3_alpha_react, Al2O3_delta_react, Al2O3_gamma_react, Al2O3_kappa_react,
+                                    VO_react, V2O3_react, V2O5_react, Ti2O3_a_react, Ti2O3_b_react,
+                                    TiO_aa_react, TiO_ab_react, TiO_ba_react, TiO_bb_react,
+                                    Cu2O_react, CuO_react)
+
+write.csv(GibbsFreeEnergy_react, 'GibbsFreeEnergy_react.csv')
+```
+
+### Plots
+```{r}
+ggplot(data = GibbsFreeEnergy_react) + 
+  geom_line(aes(x = T, y = Al2O3_alpha_react, color = 'Al2O3 alpha')) + 
+        geom_line(aes(x = T, y = Al2O3_delta_react, color = 'Al2O3 delta')) + 
+        geom_line(aes(x = T, y = Al2O3_gamma_react, color = 'Al2O3 gamma')) +
+        geom_line(aes(x = T, y = Al2O3_kappa_react, color = 'Al2O3 kappa')) +
+  ggtitle('Aluminum Reaction') + 
+  labs(x = "Temperature (K)",
+       y = "Gibbs Free Energy (kJ/mol)",
+        color = "Oxide") 
+```
+
+```{r}
+ggplot(data = GibbsFreeEnergy_react) + 
+  geom_line(aes(x = T, y = VO_react, color = 'VO')) + 
+        geom_line(aes(x = T, y = V2O3_react, color = 'V2O3')) + 
+        geom_line(aes(x = T, y = V2O5_react, color = 'V2O5')) +
+  ggtitle('Vanadium Reaction') + 
+  labs(x = "Temperature (K)",
+       y = "Gibbs Free Energy (kJ/mol)",
+        color = "Oxide") 
+```
+
+```{r}
+ggplot(data = GibbsFreeEnergy_react) + 
+  geom_line(aes(x = T, y = Ti2O3_a_react, color = 'Ti2O3 from Ti alpha')) +
+        geom_line(aes(x = T, y = Ti2O3_b_react, color = 'Ti2O3 from Ti beta')) +
+        geom_line(aes(x = T, y = TiO_aa_react, color = 'TiO alpha from Ti alpha')) +
+        geom_line(aes(x = T, y = TiO_ab_react, color = 'TiO alpha from Ti beta')) +
+        geom_line(aes(x = T, y = TiO_ba_react, color = 'TiO beta from Ti alpha')) +
+        geom_line(aes(x = T, y = TiO_bb_react, color = 'TiO beta from Ti beta')) +
+  ggtitle('Titanium Reaction') + 
+  labs(x = "Temperature (K)",
+       y = "Gibbs Free Energy (kJ/mol)",
+        color = "Oxide")
+```
+
+```{r}
+ggplot(data = GibbsFreeEnergy_react[1:1707,]) + 
+  geom_line(aes(x = T[1:1707], y = Cu2O_react, color = 'Cu2O')) + 
+        geom_line(aes(x = T[1:1707], y = CuO_react, color = 'CuO')) + 
+  ggtitle('Copper Reaction') + 
+  labs(x = "Temperature (K)",
+       y = "Gibbs Free Energy (kJ/mol)",
+        color = "Oxide") 
+```
+
+
